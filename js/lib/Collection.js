@@ -1124,6 +1124,9 @@ Collection.prototype.updateObject = function (doc, update, query, options, path,
 						}
 						break;
 
+					case '$type':
+						break;
+
 					default:
 						operation = true;
 
