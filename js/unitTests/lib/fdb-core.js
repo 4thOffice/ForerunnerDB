@@ -1827,12 +1827,33 @@ Collection.prototype.updateObject = function (doc, update, query, options, path,
 						}
 						break;
 
-					default:
+					case '$overwrite':
+					case '$inc':
+					case '$push':
+					case '$splicePush':
+					case '$splicePull':
+					case '$addToSet':
+					case '$pull':
+					case '$pop':
+					case '$move':
+					case '$cast':
+					case '$unset':
+					case '$pullAll':
+					case '$mul':
+					case '$rename':
+					case '$toggle':
 						operation = true;
 
 						// Now run the operation
 						recurseUpdated = this.updateObject(doc, update[i], query, options, path, i);
 						updated = updated || recurseUpdated;
+						break;
+
+					default:
+						// This is an unknown operator or just
+						// a normal field with a dollar starting
+						// character so ignore it
+						operation = false;
 						break;
 				}
 			}
@@ -3363,8 +3384,8 @@ Collection.prototype._find = function (query, options) {
 	if (options.$aggregate) {
 		op.data('flag.aggregate', true);
 		op.time('aggregate');
-		pathSolver = new Path(options.$aggregate);
-		resultArr = pathSolver.value(resultArr);
+		pathSolver = new Path();
+		resultArr = pathSolver.aggregate(resultArr, options.$aggregate);
 		op.time('aggregate');
 	}
 
@@ -8781,6 +8802,9 @@ var Matching = {
 
 			case '$nee': // Not equals equals
 				return source !== test;
+				
+			case '$not': // Not operator
+				return !this._match(source, test, queryOptions, 'and', options);
 
 			case '$or':
 				// Match true on ANY check to pass
@@ -11370,7 +11394,7 @@ var Overload = _dereq_('./Overload');
  * @mixin
  */
 var Shared = {
-	version: '2.0.13',
+	version: '2.0.22',
 	modules: {},
 	plugins: {},
 	index: {},

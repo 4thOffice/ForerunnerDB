@@ -2,7 +2,7 @@
   "author": "Rob Evans - Irrelon Software Limited",
   "name": "forerunnerdb",
   "description": "A NoSQL document store database for browsers and Node.js.",
-  "version": "2.0.13",
+  "version": "2.0.22",
   "keywords": [
     "irrelon",
     "forerunnerdb",
@@ -82,6 +82,7 @@
     "url": "git://github.com/irrelon/ForerunnerDB.git"
   },
   "main": "./js/builds/nodecore",
+	"browser": "./js/builds/all",
   "browserify": "./js/builds/all",
   "bugs": {
     "url": "http://github.com/irrelon/ForerunnerDB/issues"
