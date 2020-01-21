@@ -225,6 +225,8 @@ CollectionGroup.prototype._collectionsRun = function (type, args) {
 };
 
 CollectionGroup.prototype.find = function (query, options) {
+    // Pass db reference (added for $join to work)
+    this._data._db = this._db;
 	return this._data.find(query, options);
 };
 
