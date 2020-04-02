@@ -762,7 +762,13 @@ var Matching = {
                         // Check if the property name starts with a back-reference
                         if (propVal.substr(0, 3) === '$$.') {
                             // Fill the query with a back-referenced value
-                            newQuery[i] = this.sharedPathSolver.value(item, propVal.substr(3, propVal.length - 3))[0];
+
+                            // Support $fastIn for $join
+                            if (i === '$fastIn') {
+                                newQuery[i] = this.sharedPathSolver.value(item, propVal.substr(3, propVal.length - 3));
+                            } else {
+                                newQuery[i] = this.sharedPathSolver.value(item, propVal.substr(3, propVal.length - 3))[0];
+                            }
                         } else {
                             newQuery[i] = propVal;
                         }
