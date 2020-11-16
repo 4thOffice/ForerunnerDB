@@ -1,18 +1,5 @@
 "use strict";
 
-/*
-name(string)
-id(string)
-rebuild(null)
-state ?? needed?
-match(query, options)
-lookup(query, options)
-insert(doc)
-remove(doc)
-primaryKey(string)
-collection(collection)
-*/
-
 var Shared = require('./Shared'),
 	Path = require('./Path'),
 	BinaryTree = require('./BinaryTree');

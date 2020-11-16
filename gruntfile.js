@@ -1,18 +1,14 @@
 "use strict";
 
-var util = require('util'),
-	aliasify = require('aliasify'),
-	stringify = require('stringify'),
-	derequire = require('derequire');
+var aliasify = require('aliasify'),
+	stringify = require('stringify');
 
 module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks("grunt-browserify");
-	//grunt.loadNpmTasks('grunt-qunit-blanket-lcov');
 	grunt.loadNpmTasks('grunt-umd');
 	grunt.loadNpmTasks('grunt-jsdoc');
-	//grunt.loadNpmTasks('grunt-qunit-istanbul');
 	grunt.loadNpmTasks('grunt-contrib-qunit');
 	grunt.loadNpmTasks('grunt-node-qunit');
 
@@ -125,54 +121,6 @@ module.exports = function(grunt) {
 
 				}
 			}
-			/*,
-
-			"RemoteApi": {
-				// logging options
-				log: {
-					// log assertions overview
-					assertions: true,
-
-					// log expected and actual values for failed tests
-					errors: true,
-
-					// log tests overview
-					tests: true,
-
-					// log summary
-					summary: true,
-
-					// log global summary (all files)
-					globalSummary: true,
-
-					// log coverage
-					coverage: true,
-
-					// log global coverage (all files)
-					globalCoverage: true,
-
-					// log currently testing code file
-					testing: true
-				},
-
-				// run test coverage tool
-				coverage: false,
-
-				// define dependencies, which are required then before code
-				deps: null,
-
-				// define namespace your code will be attached to on global['your namespace']
-				namespace: null,
-
-				// max amount of ms child can be blocked, after that we assume running an infinite loop
-				maxBlockDuration: 2000,
-
-				code: "js/unitTests/tests/testsNodeApi.js",
-				tests: "js/unitTests/tests/testsNodeApi.js",
-				done: function (err, res) {
-
-				}
-			}*/
 		},
 
 		"qunit_blanket_lcov": {
@@ -717,14 +665,6 @@ module.exports = function(grunt) {
 		var execSync = require('child_process').execSync;
 
 		execSync('git checkout edge');
-	});
-
-	grunt.registerTask('generateTOC', 'Generate Table of Contents', function () {
-		/*"use strict";
-
-		 var execSync = require('child_process').execSync;
-
-		 execSync('doctoc readme.md');*/
 	});
 
 	grunt.registerTask('testbear', 'Run testBear tests', function () {

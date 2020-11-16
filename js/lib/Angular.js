@@ -1,8 +1,3 @@
-/*global
-	angular,
-	ForerunnerDB
-*/
-
 "use strict";
 
 /**

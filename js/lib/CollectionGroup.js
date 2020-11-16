@@ -2,9 +2,9 @@
 
 // Import external names locally
 var Shared,
-	Db,
-	DbInit,
-	Collection;
+    Db,
+    DbInit,
+    Collection;
 
 Shared = require('./Shared');
 
@@ -16,19 +16,22 @@ Shared = require('./Shared');
  * @constructor
  */
 var CollectionGroup = function () {
-	this.init.apply(this, arguments);
+    this.init.apply(this, arguments);
 };
 
 CollectionGroup.prototype.init = function (name) {
-	var self = this;
+    var self = this;
 
-	self._name = name;
-	self._data = new Collection('__FDB__cg_data_' + self._name);
-	self._collections = [];
-	self._view = [];
+    self._name = name;
+    self._data = new Collection('__FDB__cg_data_' + self._name);
+    self._collections = [];
+    self._view = [];
 };
 
+// Add Collection group to shared dictionary 
 Shared.addModule('CollectionGroup', CollectionGroup);
+
+// Add the properties and methods defined in the mixin to the collection group object
 Shared.mixin(CollectionGroup.prototype, 'Mixin.Common');
 Shared.mixin(CollectionGroup.prototype, 'Mixin.ChainReactor');
 Shared.mixin(CollectionGroup.prototype, 'Mixin.Constants');
@@ -41,15 +44,15 @@ Db = Shared.modules.Db;
 DbInit = Shared.modules.Db.prototype.init;
 
 CollectionGroup.prototype.on = function () {
-	this._data.on.apply(this._data, arguments);
+    this._data.on.apply(this._data, arguments);
 };
 
 CollectionGroup.prototype.off = function () {
-	this._data.off.apply(this._data, arguments);
+    this._data.off.apply(this._data, arguments);
 };
 
 CollectionGroup.prototype.emit = function () {
-	this._data.emit.apply(this._data, arguments);
+    this._data.emit.apply(this._data, arguments);
 };
 
 /**
@@ -58,12 +61,12 @@ CollectionGroup.prototype.emit = function () {
  * @returns {*}
  */
 CollectionGroup.prototype.primaryKey = function (keyName) {
-	if (keyName !== undefined) {
-		this._primaryKey = keyName;
-		return this;
-	}
+    if (keyName !== undefined) {
+        this._primaryKey = keyName;
+        return this;
+    }
 
-	return this._primaryKey;
+    return this._primaryKey;
 };
 
 /**
@@ -88,146 +91,171 @@ Shared.synthesize(CollectionGroup.prototype, 'db');
 Shared.synthesize(CollectionGroup.prototype, 'name');
 
 CollectionGroup.prototype.addCollection = function (collection) {
-	if (collection) {
-		if (this._collections.indexOf(collection) === -1) {
-			//var self = this;
+    if (collection) {
+        if (this._collections.indexOf(collection) === -1) {
 
-			// Check for compatible primary keys
-			if (this._collections.length) {
-				if (this._primaryKey !== collection.primaryKey()) {
-					throw(this.logIdentifier() + ' All collections in a collection group must have the same primary key!');
-				}
-			} else {
-				// Set the primary key to the first collection added
-				this.primaryKey(collection.primaryKey());
-			}
+            // Check for compatible primary keys
+            if (this._collections.length) {
+                if (this._primaryKey !== collection.primaryKey()) {
+                    throw (this.logIdentifier() + ' All collections in a collection group must have the same primary key!');
+                }
+            } else {
+                // Set the primary key to the first collection added
+                this.primaryKey(collection.primaryKey());
+            }
 
-			// Add the collection
-			this._collections.push(collection);
-			collection._groups = collection._groups || [];
-			collection._groups.push(this);
-			collection.chain(this);
+            // Add the collection
+            this._collections.push(collection);
+            collection._groups = collection._groups || [];
+            collection._groups.push(this);
+            collection.chain(this);
 
-			// Hook the collection's drop event to destroy group data
-			collection.on('drop', function () {
-				// Remove collection from any group associations
-				if (collection._groups && collection._groups.length) {
-					var groupArr = [],
-						i;
+            // Hook the collection's drop event to destroy group data
+            collection.on('drop', function () {
+                // Remove collection from any group associations
+                if (collection._groups && collection._groups.length) {
+                    var groupArr = [],
+                        i;
 
-					// Copy the group array because if we call removeCollection on a group
-					// it will alter the groups array of this collection mid-loop!
-					for (i = 0; i < collection._groups.length; i++) {
-						groupArr.push(collection._groups[i]);
-					}
+                    // Copy the group array because if we call removeCollection on a group
+                    // it will alter the groups array of this collection mid-loop!
+                    for (i = 0; i < collection._groups.length; i++) {
+                        groupArr.push(collection._groups[i]);
+                    }
 
-					// Loop any groups we are part of and remove ourselves from them
-					for (i = 0; i < groupArr.length; i++) {
-						collection._groups[i].removeCollection(collection);
-					}
-				}
+                    // Loop any groups we are part of and remove ourselves from them
+                    for (i = 0; i < groupArr.length; i++) {
+                        collection._groups[i].removeCollection(collection);
+                    }
+                }
 
-				delete collection._groups;
-			});
+                delete collection._groups;
+            });
 
-			// Add collection's data
-			this._data.insert(collection.find());
-		}
-	}
+            // Add collection's data
+            this._data.insert(collection.find());
+        }
+    }
 
-	return this;
+    return this;
 };
 
 CollectionGroup.prototype.removeCollection = function (collection) {
-	if (collection) {
-		var collectionIndex = this._collections.indexOf(collection),
-			groupIndex;
+    if (collection) {
+        var collectionIndex = this._collections.indexOf(collection),
+            groupIndex;
 
-		if (collectionIndex !== -1) {
-			collection.unChain(this);
-			this._collections.splice(collectionIndex, 1);
+        if (collectionIndex !== -1) {
+            collection.unChain(this);
+            this._collections.splice(collectionIndex, 1);
 
-			collection._groups = collection._groups || [];
-			groupIndex = collection._groups.indexOf(this);
+            collection._groups = collection._groups || [];
+            groupIndex = collection._groups.indexOf(this);
 
-			if (groupIndex !== -1) {
-				collection._groups.splice(groupIndex, 1);
-			}
+            if (groupIndex !== -1) {
+                collection._groups.splice(groupIndex, 1);
+            }
 
-			collection.off('drop');
-		}
+            collection.off('drop');
+        }
 
-		if (this._collections.length === 0) {
-			// Wipe the primary key
-			delete this._primaryKey;
-		}
-	}
+        if (this._collections.length === 0) {
+            // Wipe the primary key
+            delete this._primaryKey;
+        }
+    }
 
-	return this;
+    return this;
 };
 
 CollectionGroup.prototype._chainHandler = function (chainPacket) {
-	//sender = chainPacket.sender;
-	switch (chainPacket.type) {
-		case 'setData':
-			// Decouple the data to ensure we are working with our own copy
-			chainPacket.data.dataSet = this.decouple(chainPacket.data.dataSet);
+    //sender = chainPacket.sender;
+    switch (chainPacket.type) {
+        case 'setData':
+            // Decouple the data to ensure we are working with our own copy
+            chainPacket.data.dataSet = this.decouple(chainPacket.data.dataSet);
 
-			// Remove old data
-			this._data.remove(chainPacket.data.oldData);
+            // Remove old data
+            this._data.remove(chainPacket.data.oldData);
 
-			// Add new data
-			this._data.insert(chainPacket.data.dataSet);
-			break;
+            // Add new data
+            this._data.insert(chainPacket.data.dataSet);
+            break;
 
-		case 'insert':
-			// Decouple the data to ensure we are working with our own copy
-			chainPacket.data.dataSet = this.decouple(chainPacket.data.dataSet);
+        case 'insert':
+            // Decouple the data to ensure we are working with our own copy
+            chainPacket.data.dataSet = this.decouple(chainPacket.data.dataSet);
 
-			// Add new data
-			this._data.insert(chainPacket.data.dataSet);
-			break;
+            // Add new data
+            this._data.insert(chainPacket.data.dataSet);
+            break;
 
-		case 'update':
-			// Update data
-			this._data.update(chainPacket.data.query, chainPacket.data.update, chainPacket.options);
-			break;
+        case 'update':
+            // Update data
+            this._data.update(chainPacket.data.query, chainPacket.data.update, chainPacket.options);
+            break;
 
-		case 'remove':
-			this._data.remove(chainPacket.data.query, chainPacket.options);
-			break;
+        case 'remove':
+            this._data.remove(chainPacket.data.query, chainPacket.options);
+            break;
 
-		default:
-			break;
-	}
+        default:
+            break;
+    }
 };
 
 CollectionGroup.prototype.insert = function () {
-	this._collectionsRun('insert', arguments);
+    this._collectionsRun('insert', arguments);
 };
 
 CollectionGroup.prototype.update = function () {
-	this._collectionsRun('update', arguments);
+    this._collectionsRun('update', arguments);
 };
 
 CollectionGroup.prototype.updateById = function () {
-	this._collectionsRun('updateById', arguments);
+    this._collectionsRun('updateById', arguments);
 };
 
 CollectionGroup.prototype.remove = function () {
-	this._collectionsRun('remove', arguments);
+    this._collectionsRun('remove', arguments);
 };
 
 CollectionGroup.prototype._collectionsRun = function (type, args) {
-	for (var i = 0; i < this._collections.length; i++) {
-		this._collections[i][type].apply(this._collections[i], args);
-	}
+    for (var i = 0; i < this._collections.length; i++) {
+        this._collections[i][type].apply(this._collections[i], args);
+    }
 };
 
 CollectionGroup.prototype.find = function (query, options) {
     // Pass db reference (added for $join to work)
     this._data._db = this._db;
-	return this._data.find(query, options);
+    return this._data.find(query, options)
+};
+
+CollectionGroup.prototype.findWithIndex = function (query, options) {
+    // Pass db reference (added for $join to work)
+
+    let r = []
+    for (var i = 0; i < this._collections.length; i++) {
+        let res = this._collections[i].find(query, options);
+        r.push(res);
+    }
+
+    // Get total ms for statistics and clean output
+    var totalMs = 0;
+    for (var i = 0; i < r.length; i++) {
+        totalMs += r[i].__fdbOp._data.time.totalMs
+        delete r[i].__fdbOp
+        delete r[i].$cursor
+    }
+
+    // Get combined result
+    var combinedResult = [].concat.apply([], r)
+
+    return {
+        totalMs: totalMs,
+        ...combinedResult
+    };
 };
 
 /**
@@ -235,10 +263,10 @@ CollectionGroup.prototype.find = function (query, options) {
  * @param {String} id The id of the document to remove.
  */
 CollectionGroup.prototype.removeById = function (id) {
-	// Loop the collections in this group and apply the remove
-	for (var i = 0; i < this._collections.length; i++) {
-		this._collections[i].removeById(id);
-	}
+    // Loop the collections in this group and apply the remove
+    for (var i = 0; i < this._collections.length; i++) {
+        this._collections[i].removeById(id);
+    }
 };
 
 /**
@@ -250,12 +278,12 @@ CollectionGroup.prototype.removeById = function (id) {
  * @returns {*}
  */
 CollectionGroup.prototype.subset = function (query, options) {
-	var result = this.find(query, options);
+    var result = this.find(query, options);
 
-	return new Collection()
-		.subsetOf(this)
-		.primaryKey(this._primaryKey)
-		.setData(result);
+    return new Collection()
+        .subsetOf(this)
+        .primaryKey(this._primaryKey)
+        .setData(result);
 };
 
 /**
@@ -263,47 +291,47 @@ CollectionGroup.prototype.subset = function (query, options) {
  * @returns {boolean} True on success, false on failure.
  */
 CollectionGroup.prototype.drop = function (callback) {
-	if (!this.isDropped()) {
-		var i,
-			collArr,
-			viewArr;
+    if (!this.isDropped()) {
+        var i,
+            collArr,
+            viewArr;
 
-		if (this._debug) {
-			console.log(this.logIdentifier() + ' Dropping');
-		}
+        if (this._debug) {
+            console.log(this.logIdentifier() + ' Dropping');
+        }
 
-		this._state = 'dropped';
+        this._state = 'dropped';
 
-		if (this._collections && this._collections.length) {
-			collArr = [].concat(this._collections);
+        if (this._collections && this._collections.length) {
+            collArr = [].concat(this._collections);
 
-			for (i = 0; i < collArr.length; i++) {
-				this.removeCollection(collArr[i]);
-			}
-		}
+            for (i = 0; i < collArr.length; i++) {
+                this.removeCollection(collArr[i]);
+            }
+        }
 
-		if (this._view && this._view.length) {
-			viewArr = [].concat(this._view);
+        if (this._view && this._view.length) {
+            viewArr = [].concat(this._view);
 
-			for (i = 0; i < viewArr.length; i++) {
-				this._removeView(viewArr[i]);
-			}
-		}
+            for (i = 0; i < viewArr.length; i++) {
+                this._removeView(viewArr[i]);
+            }
+        }
 
-		this.emit('drop', this);
+        this.emit('drop', this);
 
-		delete this._listeners;
+        delete this._listeners;
 
-		if (callback) { callback(false, true); }
-	}
+        if (callback) { callback(false, true); }
+    }
 
-	return true;
+    return true;
 };
 
 // Extend DB to include collection groups
 Db.prototype.init = function () {
-	this._collectionGroup = {};
-	DbInit.apply(this, arguments);
+    this._collectionGroup = {};
+    DbInit.apply(this, arguments);
 };
 
 /**
@@ -315,27 +343,27 @@ Db.prototype.init = function () {
  * @returns {*}
  */
 Db.prototype.collectionGroup = function (name) {
-	var self = this;
+    var self = this;
 
-	if (name) {
-		// Handle being passed an instance
-		if (name instanceof CollectionGroup) {
-			return name;
-		}
+    if (name) {
+        // Handle being passed an instance
+        if (name instanceof CollectionGroup) {
+            return name;
+        }
 
-		if (this._collectionGroup && this._collectionGroup[name]) {
-			return this._collectionGroup[name];
-		}
+        if (this._collectionGroup && this._collectionGroup[name]) {
+            return this._collectionGroup[name];
+        }
 
-		this._collectionGroup[name] = new CollectionGroup(name).db(this);
+        this._collectionGroup[name] = new CollectionGroup(name).db(this);
 
-		self.deferEmit('create', self._collectionGroup[name], 'collectionGroup', name);
+        self.deferEmit('create', self._collectionGroup[name], 'collectionGroup', name);
 
-		return this._collectionGroup[name];
-	} else {
-		// Return an object of collection data
-		return this._collectionGroup;
-	}
+        return this._collectionGroup[name];
+    } else {
+        // Return an object of collection data
+        return this._collectionGroup;
+    }
 };
 
 /**
@@ -344,18 +372,18 @@ Db.prototype.collectionGroup = function (name) {
  * the database is currently managing.
  */
 Db.prototype.collectionGroups = function () {
-	var arr = [],
-		i;
+    var arr = [],
+        i;
 
-	for (i in this._collectionGroup) {
-		if (this._collectionGroup.hasOwnProperty(i)) {
-			arr.push({
-				name: i
-			});
-		}
-	}
+    for (i in this._collectionGroup) {
+        if (this._collectionGroup.hasOwnProperty(i)) {
+            arr.push({
+                name: i
+            });
+        }
+    }
 
-	return arr;
+    return arr;
 };
 
 module.exports = CollectionGroup;
