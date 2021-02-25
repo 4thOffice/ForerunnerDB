@@ -714,7 +714,7 @@ Collection.prototype.save = function (callback) {
 		if (self._db) {
 			processSave = function () {
 				// Save the collection data
-				self._db.persist.save(self._db._name + '-' + self._name, self._data, function (err, tableData, tableStats) {
+				self._db.persist.save(self._db._name + '-' + self._name, self._data.getData(), function (err, tableData, tableStats) {
 					if (err) {
 						if (callback) { callback(err); }
 						return;
@@ -842,7 +842,7 @@ Collection.prototype.saveCustom = function (callback) {
 	if (self._name) {
 		if (self._db) {
 			processSave = function () {
-				self.encode(self._data, function (err, data, tableStats) {
+				self.encode(self._data.getData(), function (err, data, tableStats) {
 					if (!err) {
 						myData.data = {
 							name: self._db._name + '-' + self._name,
@@ -850,7 +850,7 @@ Collection.prototype.saveCustom = function (callback) {
 							tableStats: tableStats
 						};
 
-						self.encode(self._data, function (err, data, tableStats) {
+						self.encode(self._data.getData(), function (err, data, tableStats) {
 							if (!err) {
 								myData.metaData = {
 									name: self._db._name + '-' + self._name + '-metaData',

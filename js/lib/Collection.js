@@ -1,6 +1,7 @@
 "use strict";
 
 var Shared,
+    Data,
     Db,
     Metrics,
     KeyValueStore,
@@ -14,6 +15,7 @@ var Shared,
     sharedPathSolver;
 
 Shared = require('./Shared');
+Data = require('./Data');
 
 /**
  * Creates a new collection. Collections store multiple documents and
@@ -40,7 +42,7 @@ Collection.prototype.init = function (name, options) {
     this._primaryCrc = new KeyValueStore('primaryCrc', { primaryKey: this.primaryKey() });
     this._crcLookup = new KeyValueStore('crcLookup', { primaryKey: this.primaryKey() });
     this._name = name;
-    this._data = [];
+    this._data = new Data();
     this._metrics = new Metrics();
 
     this._options = options || {
@@ -442,7 +444,7 @@ Collection.prototype.setData = new Overload('Collection.prototype.setData', {
 
         if (data) {
             var deferredSetting = this.deferredCalls(),
-                oldData = [].concat(this._data);
+                oldData = [].concat(this._data.getData());
 
             // Switch off deferred calls since setData should be
             // a synchronous call
@@ -468,7 +470,7 @@ Collection.prototype.setData = new Overload('Collection.prototype.setData', {
             this.deferredCalls(deferredSetting);
 
             this._onChange();
-            this.emit('setData', this._data, oldData);
+            this.emit('setData', this._data.getData(), oldData);
         }
 
         if (callback) { callback.call(this); }
@@ -506,7 +508,7 @@ Collection.prototype.rebuildPrimaryKeyIndex = function (options) {
     crcLookup.truncate();
 
     // Loop the data and check for a primary key in each object
-    arr = this._data;
+    arr = this._data.getData();
     arrCount = arr.length;
 
     while (arrCount--) {
@@ -560,10 +562,10 @@ Collection.prototype.truncate = function () {
     }
     // TODO: This should use remove so that chain reactor events are properly
     // TODO: handled, but ensure that chunking is switched off
-    this.emit('truncate', this._data);
+    this.emit('truncate', this.getData());
 
     // Clear all the data from the collection
-    this._data.length = 0;
+    this._data.clearData();
 
     // Re-create the primary index data
     this._primaryIndex = new KeyValueStore('primary', { primaryKey: this.primaryKey() });
@@ -1803,9 +1805,9 @@ Collection.prototype.insert = function (data, index, callback) {
 
     if (typeof (index) === 'function') {
         callback = index;
-        index = this._data.length;
+        index = this._data.getLength();
     } else if (index === undefined) {
-        index = this._data.length;
+        index = this._data.getLength();
     }
 
     data = this.transformIn(data);
@@ -1942,7 +1944,7 @@ Collection.prototype._insert = function (doc, index) {
             // if we are over the threshold
             if (capped && self._data.length > cappedSize) {
                 // Remove the first item in the data array
-                self.removeById(self._data[0][self._primaryKey]);
+                self.removeById(self._data.getData()[0][self._primaryKey]);
             }
 
             //op.time('Resolve chains');
@@ -2021,7 +2023,7 @@ Collection.prototype._dataRemoveAtIndex = function (index) {
 Collection.prototype._dataReplace = function (data) {
     // Clear the array - using a while loop with pop is by far the
     // fastest way to clear an array currently
-    while (this._data.length) {
+    while (this._data.getLength()) {
         this._data.pop();
     }
 
@@ -2207,7 +2209,7 @@ Collection.prototype.findById = function (id, options) {
  */
 Collection.prototype.peek = function (search, options) {
     // Loop all items
-    var arr = this._data,
+    var arr = this._data.getData(),
         arrCount = arr.length,
         arrIndex,
         arrItem,
@@ -2421,9 +2423,9 @@ Collection.prototype._find = function (query, options) {
                 resultArr = resultArr.filter(matcher);
             } else {
                 // Filter the source data and return the result
-                scanLength = this._data.length;
+                scanLength = this._data.getLength();
                 op.time('tableScan: ' + scanLength);
-                resultArr = this._data.filter(matcher);
+                resultArr = this._data.filter(matcher, options.__updateAccessedAt__);
             }
 
             op.time('tableScan: ' + scanLength);
@@ -2746,7 +2748,7 @@ Collection.prototype.removeByIndex = function (index) {
     var doc,
         docId;
 
-    doc = this._data[index];
+    doc = this._data.getData()[index];
 
     if (doc !== undefined) {
         doc = this.decouple(doc);
@@ -3283,7 +3285,7 @@ Collection.prototype._queryReferencesSource = function (query, sourceName, path)
  */
 Collection.prototype.count = function (query, options) {
     if (!query) {
-        return this._data.length;
+        return this._data.getLength();
     } else {
         // Run query and return count
         return this.find(query, options).length;
@@ -3526,13 +3528,13 @@ Collection.prototype.diff = function (collection) {
     }
 
     // Use the collection primary key index to do the diff (super-fast)
-    arr = collection._data;
+    arr = collection._data.getData();
 
     // Check if we have an array or another collection
     while (arr && !(arr instanceof Array)) {
         // We don't have an array, assign collection and get data
         collection = arr;
-        arr = collection._data;
+        arr = collection._data.getData();
     }
 
     arrCount = arr.length;
@@ -3555,7 +3557,7 @@ Collection.prototype.diff = function (collection) {
     }
 
     // Now loop this collection's data and check for matching items
-    arr = this._data;
+    arr = this._data.getData();
     arrCount = arr.length;
 
     for (arrIndex = 0; arrIndex < arrCount; arrIndex++) {

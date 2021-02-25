@@ -227,63 +227,6 @@ Db.prototype.arrayToCollection = function (arr) {
 	return new Collection().setData(arr);
 };
 
-/**
- * Registers an event listener against an event name.
- * @param {String} event The name of the event to listen for.
- * @param {Function} listener The listener method to call when
- * the event is fired.
- * @returns {*}
- */
-/*Db.prototype.on = function(event, listener) {
-	this._listeners = this._listeners || {};
-	this._listeners[event] = this._listeners[event] || [];
-	this._listeners[event].push(listener);
-
-	return this;
-};*/
-
-/**
- * De-registers an event listener from an event name.
- * @param {String} event The name of the event to stop listening for.
- * @param {Function} listener The listener method passed to on() when
- * registering the event listener.
- * @returns {*}
- */
-/*Db.prototype.off = function(event, listener) {
-	if (event in this._listeners) {
-		var arr = this._listeners[event],
-			index = arr.indexOf(listener);
-
-		if (index > -1) {
-			arr.splice(index, 1);
-		}
-	}
-
-	return this;
-};*/
-
-/**
- * Emits an event by name with the given data.
- * @param {String} event The name of the event to emit.
- * @param {*=} data The data to emit with the event.
- * @returns {*}
- */
-/*Db.prototype.emit = function(event, data) {
-	this._listeners = this._listeners || {};
-
-	if (event in this._listeners) {
-		var arr = this._listeners[event],
-			arrCount = arr.length,
-			arrIndex;
-
-		for (arrIndex = 0; arrIndex < arrCount; arrIndex++) {
-			arr[arrIndex].apply(this, Array.prototype.slice.call(arguments, 1));
-		}
-	}
-
-	return this;
-};*/
-
 Db.prototype.peek = function (search) {
 	var i,
 			coll,
