@@ -12,15 +12,22 @@ Data.prototype.init = function (name, options) {
 
 Shared.addModule('Data', Data);
 
-Data.prototype.filter = function (matcher, updateLastAccessedAt=false) {
+Data.prototype.filter = function (matcher, updateLastAccessedAt = false) {
     let data = this._data.filter(matcher)
 
-    // Add option to not update '_lastAccessedAt' property
-    // (default not updating for making requests from console)
-    if(updateLastAccessedAt && data && data.length > 0) {
+    /**
+     * Control whether or not _lastAccessedAt is set with '__updateAccessedAt__' option
+     * (default set to false to not update if called from console or on load).
+     * Always update _lastAccessedAt if missing
+     */
+    if (data && data.length > 0) {
         let date = new Date().toISOString();
         try {
-            data.forEach((r) => r._lastAccessedAt = date);
+            data.forEach((r) => {
+                if (updateLastAccessedAt || !r._lastAccessedAt) {
+                    r._lastAccessedAt = date;
+                }
+            });
         } catch (err) {
             console.log(err);
         }
